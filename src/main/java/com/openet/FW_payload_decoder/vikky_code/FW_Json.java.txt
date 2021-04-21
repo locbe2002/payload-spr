@@ -1,0 +1,65 @@
+package com.openet.FW_payload_decoder;
+import java.io.*; 
+import java.util.*; 
+import java.io.File;
+import org.apache.commons.io.FileUtils;
+import org.json.*;
+
+public class FW_Json 
+{
+	private class SubAvs{
+		String SubAvsName;
+		char Del;
+		List<String> SubAvsField = new ArrayList<String>();
+	}
+	private class MainAvs{
+		String FileName;
+		String AvsName;
+		char Del;
+		List<String> AvsField = new ArrayList<String>();
+		List<SubAvs> MSubAvs = new ArrayList<SubAvs>();
+	}
+/*
+ *
+*/
+	FW_Json(String FileName) throws Exception {
+	}
+/*
+ *
+*/
+	public static void readJSON(String FileName) throws Exception {
+    File file = new File(FileName);
+    String content = FileUtils.readFileToString(file, "utf-8");
+    JSONObject tomJsonObject = new JSONObject(content);    
+
+		Iterator<String> keys = tomJsonObject.keys();
+		List<MainAvs>MainAvses = new ArrayList<MainAvs>();
+
+		while(keys.hasNext()) {
+    	String key = keys.next();
+    	if (tomJsonObject.get(key) instanceof JSONObject) {
+				MainAvs TmpMainAvs = null;
+				JSONObject AvsObject = tomJsonObject.getJSONObject(key);
+				TmpMainAvs.AvsName = AvsObject.getString("name");
+				TmpMainAvs.Del = AvsObject.getString("delimiter").charAt(0);
+				TmpMainAvs.FileName = AvsObject.getString("file_name");
+				JSONArray AvsFields = AvsObject.getJSONArray("fields");
+				List<Object> AvsField = AvsFields.toList();
+				for (Object Field : AvsField) {
+    			TmpMainAvs.AvsField.add((String)Field);
+				}
+				SubAvs TmpSubAvs = null;
+				JSONObject SubAvsObject = AvsObject.getJSONObject("subavs");
+				TmpSubAvs.SubAvsName = SubAvsObject.getString("name");
+				TmpSubAvs.Del = SubAvsObject.getString("delimiter").charAt(0);
+				JSONArray SubAvsFields = SubAvsObject.getJSONArray("fields");
+				List<Object> Fields = SubAvsFields.toList();
+				for (Object Field : Fields) {
+    			TmpSubAvs.SubAvsField.add((String)Field);
+				}
+				TmpMainAvs.MSubAvs.add(TmpSubAvs);
+				MainAvses.add(TmpMainAvs);
+      }
+    }
+  }
+}

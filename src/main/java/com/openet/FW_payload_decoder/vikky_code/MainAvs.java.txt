@@ -1,0 +1,93 @@
+package com.openet.FW_payload_decoder_vk;
+import java.io.*;
+import java.util.*;
+import java.io.File;
+import org.apache.commons.io.FileUtils;
+import org.json.*;
+public class MainAvs{
+    private class SubAvs{
+        public String SubAvsName;
+        public String Del;
+        public List<String> SubAvsField = new ArrayList<String>();
+    }
+    public String FileName;
+    public String AvsName;
+    public String Del;
+    public List<String> AvsField = null;
+    public List<SubAvs> MSubAvs = null;
+    public MainAvs() {
+        AvsField = new ArrayList<>();
+        MSubAvs = new ArrayList<>();
+    }
+
+    public String getSubAvses(String CsvHeader) {
+        for (SubAvs lv_SubAvs: MSubAvs) {
+            for (String s: lv_SubAvs.SubAvsField) {
+                CsvHeader = CsvHeader + s.toUpperCase() + lv_SubAvs.Del;
+            }
+        }
+        return CsvHeader;
+    }
+
+    public String getDel() { return this.Del; }
+    public String getFileName() { return this.FileName; }
+    public String getAvsName() { return this.AvsName; }
+    public Iterable<String> getAvsField() {
+        return AvsField;
+    }
+    public Iterable<SubAvs> getMSubAvs() { return MSubAvs; }
+    private void populateFields(JSONArray jsonObj) {
+        if (jsonObj != null) {
+            List<Object> AvsField = jsonObj.toList();
+            for (Object field : AvsField) {
+                if (field != null) 
+                    this.AvsField.add((String) field);
+            }
+        }
+    }
+    private void populateSubAvs(JSONObject subAvs) {
+        SubAvs mSubAvs = new SubAvs();
+        mSubAvs.SubAvsName = subAvs.getString("name"); 
+        mSubAvs.Del = subAvs.getString("delimiter"); 
+        JSONArray SubAvsFields = subAvs.getJSONArray("fields");
+        List<Object> listOfSubAvsFields = SubAvsFields.toList();
+        for (Object field : listOfSubAvsFields) {
+            if (field != null) 
+                mSubAvs.SubAvsField.add((String) field);
+        }
+        MSubAvs.add(mSubAvs);
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("AvsName: " + this.AvsName +
+                ", FileName: " + this.FileName +
+                ", Del : " + this.Del);
+        if (this.AvsField != null) {
+            for (String s: this.AvsField) {
+                sb.append(s + ", " );
+            }
+        }
+        return sb.toString();
+    }
+    public MainAvs(String key, JSONObject jsonObj) {
+        AvsField = new ArrayList<>();
+        MSubAvs = new ArrayList<>();
+        this.AvsName = key;
+        if (jsonObj != null) {
+            Iterator<String> keysIt = jsonObj.keys();
+            while (keysIt.hasNext()) {
+                String k = keysIt.next();
+                if (k.equals("delimiter")) {
+                    this.Del = jsonObj.getString(k);
+                } else if (k.equals("file_name")) {
+                    this.FileName = jsonObj.getString(k);
+                } else if (k.equals("fields")) {
+                    populateFields(jsonObj.getJSONArray(k));
+                } else if (k.equals("subavs")) {
+                    populateSubAvs(jsonObj.getJSONObject(k));
+                }
+            }
+        }
+    }
+}
